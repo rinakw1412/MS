@@ -1,0 +1,13 @@
+version: 2
+sources:
+  - name: financial_transaction
+    description : This is a replica of the PostgreSQL database 
+    database : postgres
+    schema : public
+    tables:
+      - name: customers
+        description : raw customers data
+      - name: accounts
+        description : raw accounts data
+      - name: transactions
+        description : raw transactions data  
