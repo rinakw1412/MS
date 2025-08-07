@@ -1,7 +1,6 @@
 {{
     config(
-        materialized='incremental',
-        unique_key='customer_id'
+        materialized='view'
     )
 }}
 with base as (
@@ -9,11 +8,13 @@ with base as (
         customer_id,
         first_name,
         last_name,
-        date_of_birth,
+        to_date(date_of_birth, 'YYYY-MM-DD') as date_of_birth,
         address,
         city,
-        province
+        province,
+        ingestion_datetime
     from {{ source('financial_transaction', 'customers') }}
-)
+    where customer_id is not null
+)   
 
 select * from base
