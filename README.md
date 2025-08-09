@@ -16,7 +16,7 @@ Assumptions :
    
    
 Data Model : 
-
+<img width="1806" height="472" alt="image" src="https://github.com/user-attachments/assets/e2a87184-1a8c-4d80-8782-914c1ade6ad4" />
 
 How to set up the project : 
 1. Prerequisites
