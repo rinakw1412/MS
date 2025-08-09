@@ -1,0 +1,328 @@
+version: 2
+models:
+  - name: stg_customers
+    description: This model create a staging view for Customers, which is a clean version of raw Customers data.
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: first_name
+        description: Customer's first name.
+      - name: last_name
+        description: Customer's last name.
+      - name: date_of_birth
+        description: Customer's birthdate (format = YYYY-MM-DD).
+      - name: address
+        description: Customer's address
+      - name: city
+        description: Customer's city
+      - name: province
+        description: Customer's province
+      - name: ingestion_datetime
+        description: Timestamp of ingestion 
+  - name: stg_accounts
+    description: This model create a staging view for Accounts, which is a clean version of raw Accounts data.
+    columns:
+      - name: account_id
+        description: Unique identifier for each account
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Unique identifier for each customer. Each Customer may have more than one accounts
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+      - name: opening_date
+        description: Opening date of the account (format = YYYY-MM-DD)
+      - name: account_type
+        description: Type of the account
+        tests:
+          - accepted_values:
+              values: ['savings','loan','checking','unknown']
+      - name: balance_usd
+        description: Latest balance in USD 
+      - name: ingestion_datetime
+        description: Timestamp of ingestion
+  - name: stg_transactions
+    description: This model create a staging view for Transactions
+    columns:
+      - name: transaction_id
+        description: Unique identifier for each transactions
+        tests:
+          - not_null
+          - unique
+      - name: account_id
+        description: Account which the transaction belongs to
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_accounts')
+              field: account_id
+      - name: transaction_date
+        description: Date of transaction (format = YYYY-MM-DD).
+        tests:
+          - not_null
+      - name: amount
+        description: Amount of transaction
+      - name: currency
+        description: Currency for each transactions
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['idr', 'usd', 'jpy', 'eur', 'aud']
+      - name: transaction_type
+        description: Type of transaction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['deposit', 'purchase', 'transfer', 'withdrawal', 'unknown']
+      - name: merchant_id
+        description: Merchant of transaction 
+      - name: ingestion_datetime
+        description: Timestamp of ingestion
+  - name: int_transactions_accounts
+    description: This model is a product join of Transactions and Accounts data
+    columns:
+      - name: transaction_id
+        description: Unique identifier for each transaction
+        tests:
+          - not_null
+          - unique
+      - name: account_id
+        description: Unique identifier for each account
+        tests:
+          - not_null
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+      - name: transaction_date
+        description: Date of transaction (format = YYYY-MM-DD).
+        tests:
+          - not_null
+      - name: transaction_type
+        description: Type of transaction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['deposit', 'purchase', 'transfer', 'withdrawal', 'unknown']
+      - name: amount_original
+        description: Amount of transaction in original currency
+      - name: currency
+        description: Original currency of the transaction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['idr', 'usd', 'jpy', 'eur', 'aud']
+      - name: conversion_rate
+        description: Assumptions of fixed conversation rate for the amount transaction
+      - name: merchant_id
+        description: Merchant of transaction
+      - name: amount_usd
+        description: Amount of transaction in USD
+  - name: int_transactions_daily_agg
+    description: This model is an aggregation product of daily .
+    columns:
+      - name: transaction_date
+        description: Date of transaction (format = YYYY-MM-DD).
+        tests:
+          - not_null
+      - name: account_id
+        description: Unique identifier for each account
+        tests:
+          - not_null
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+      - name: transaction_type
+        description: Type of transaction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['deposit', 'purchase', 'transfer', 'withdrawal', 'unknown']
+      - name: transaction_count
+        description: Count of Transaction that is made by each Accounts
+      - name: total_amount_usd
+        description: Total amount of transaction in USD
+      - name: avg_amount_usd
+        description: Average amount of transaction in USD
+  - name: int_customer_activity
+    description: This model is an aggregation product of transactions on Customer level, which shows summary of transactions made by each Customers
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: num_accounts
+        description: Count of account owned by each Customer
+      - name: total_txn_count
+        description: Count of transaction made by each Customer
+      - name: total_txn_amount_usd
+        description: Total amount of transaction made by each Customer in USD
+      - name: first_txn_date
+        description: Date of first transaction made by each customer
+      - name: last_txn_date
+        description: Date of last transaction made by each customer
+      - name: active_days
+        description: Active days of the Customer
+  - name: dim_customers
+    description: This model is a product of Customers dimension data and activity details
+    columns:
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+          - unique
+      - name: first_name
+        description: Customer's first name.
+      - name: last_name
+        description: Customer's last name.
+      - name: date_of_birth
+        description: Customer's birthdate (format = YYYY-MM-DD).
+      - name: address
+        description: Customer's address
+      - name: city
+        description: Customer's city
+      - name: province
+        description: Customer's province
+      - name: num_accounts
+        description: Count of account owned by each Customer
+      - name: total_txn_count
+        description: Count of transaction made by each Customer
+      - name: total_txn_amount_usd
+        description: Total amount of transaction made by each Customer in USD
+      - name: first_txn_date
+        description: Date of first transaction made by each customer
+      - name: last_txn_date
+        description: Date of last transaction made by each customer
+      - name: active_days
+        description: Active days of the Customer
+  - name: dim_accounts
+    description: This model generates Accounts dimension
+    columns:
+      - name: account_id
+        description: Unique identifier for each account.
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Unique identifier for each customer. Each Customer may have more than one accounts
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+      - name: opening_date
+        description: Opening date of the account (format = YYYY-MM-DD)
+      - name: account_type
+        description: Type of the account
+        tests:
+          - accepted_values:
+              values: ['savings','loan','checking','unknown']
+      - name: balance_usd
+        description: Latest balance in USD      
+  - name: fct_transactions
+    description: This model generates fact tables for Transactions
+    columns:
+      - name: transaction_id
+        description: Unique identifier for each transaction
+        tests:
+          - not_null
+          - unique
+      - name: account_id
+        description: Unique identifier for each account
+        tests:
+          - not_null
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+      - name: transaction_date
+        description: Date of transaction (format = YYYY-MM-DD).
+        tests:
+          - not_null
+      - name: transaction_type
+        description: Type of transaction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['deposit', 'purchase', 'transfer', 'withdrawal', 'unknown']
+      - name: merchant_id
+        description: Merchant of transaction
+      - name: amount_original
+        description: Amount of transaction in original currency
+      - name: currency
+        description: Original currency of the transaction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['idr', 'usd', 'jpy', 'eur', 'aud']
+      - name: conversion_rate
+        description: Assumptions of fixed conversation rate for the amount transaction
+      - name: amount_usd
+        description: Amount of transaction in USD
+      - name: account_type
+        description: Type of the account
+        tests:
+          - accepted_values:
+              values: ['savings','loan','checking','unknown']
+      - name: opening_date
+        description: Opening date of the account (format = YYYY-MM-DD)
+      - name: balance_usd
+        description: Latest balance in USD
+  - name: fct_transaction_summary
+    description: This model generates fact tables for Transactions summaries
+    columns:
+      - name: transaction_date
+        description: Date of transaction (format = YYYY-MM-DD).
+        tests:
+          - not_null
+      - name: account_id
+        description: Unique identifier for each account
+        tests:
+          - not_null
+      - name: account_type
+        description: Type of the account
+        tests:
+          - accepted_values:
+              values: ['savings','loan','checking','unknown']
+      - name: opening_date
+        description: Opening date of the account (format = YYYY-MM-DD)
+      - name: balance_usd
+        description: Latest balance in USD
+      - name: customer_id
+        description: Unique identifier for each customer
+        tests:
+          - not_null
+      - name: first_name
+        description: Customer's first name.
+      - name: last_name
+        description: Customer's last name.
+      - name: date_of_birth
+        description: Customer's birthdate (format = YYYY-MM-DD).
+      - name: address
+        description: Customer's address
+      - name: city
+        description: Customer's city
+      - name: province
+        description: Customer's province
+      - name: transaction_type
+        description: Type of transaction
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['deposit', 'purchase', 'transfer', 'withdrawal', 'unknown']
+      - name: transaction_count
+        description: Count of Transaction that is made by each Accounts
+      - name: total_amount_usd
+        description: Total amount of transaction in USD
+      - name: avg_amount_usd
+        description: Average amount of transaction in USD
+          

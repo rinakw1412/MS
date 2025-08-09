@@ -1,9 +1,15 @@
-{{
-    config(
-        materialized='view'
-    )
-}}
 with base as (
+    select 
+        t.*
+    from {{ source('financial_transaction', 'transactions') }} t
+    inner join {{ ref('stg_accounts') }} a
+        on t.account_id = a.account_id
+    where 
+        t.transaction_id is not null
+    and t.currency is not null
+) ,
+
+clean as (
     select 
         transaction_id,
         account_id,
@@ -12,46 +18,36 @@ with base as (
           then to_date(transaction_date, 'YYYY-MM-DD')
           else null
         end as transaction_date,
-        case 
+        case         
             when amount is null then 0
-            when amount = 'error' then 0
-            else cast(amount as float)
+            when nullif(trim(lower(amount)), '') = 'error' then 0
+            else cast(nullif(trim(amount), '') as float)
         end as amount,
-        currency,
-        transaction_type,
+        trim(lower(currency)) as currency,
+        trim(lower(coalesce(transaction_type,'unknown'))) as transaction_type,
         merchant_id,
         ingestion_datetime
-      from {{ source('financial_transaction', 'transactions') }}
-) ,
-filtered as (
+    from base        
+),
+
+filtered as(
     select *
-    from base
-    where 
-        transaction_id is not null 
-        and account_id is not null
-        and transaction_date is not null
-        and currency is not null
+    from clean 
+    where  
+        transaction_date is not null
 ),
 
 addrownum as(
     select *,
-    row_number() over ( 
-        partition by transaction_id 
-        order by ingestion_datetime desc
-    ) as row_num
+        row_number() over (
+            partition by transaction_id
+            order by ingestion_datetime desc
+        ) as row_num
     from filtered
 ),
 
 dedup as (
-    select 
-        transaction_id,
-        account_id,
-        transaction_date,
-        amount,
-        currency,
-        transaction_type,
-        merchant_id,
-        ingestion_datetime
+    select * 
     from addrownum
     where row_num = 1
 )
