@@ -1,20 +1,21 @@
-{{
-    config(
-        materialized='view'
-    )
-}}
 with base as (
+    select *
+    from {{ source('financial_transaction', 'customers') }}
+    where 
+        customer_id is not null
+),
+
+final as (
     select 
         customer_id,
-        first_name,
-        last_name,
+        trim(lower(first_name)) as first_name,
+        trim(lower(last_name)) as last_name,
         to_date(date_of_birth, 'YYYY-MM-DD') as date_of_birth,
-        address,
-        city,
-        province,
+        trim(lower(address)) as address,
+        trim(lower(city)) as city,
+        trim(lower(province)) as province,
         ingestion_datetime
-    from {{ source('financial_transaction', 'customers') }}
-    where customer_id is not null
-)   
+    from base
+)
 
-select * from base
+select * from final
