@@ -26,17 +26,17 @@ How to set up the project :
     - dbt cloud account
 
 2. Database setup :
-    For this project, I used Supabase to host cloud PostgreSQL database. 
-    Connection details are as follows :
-        type: postgres
-        host : aws-0-ap-southeast-1.pooler.supabase.com
-        user : postgres.zrszjmngrrdaxjwxlfed
-        password : Super123
-        port: 5432
-        dbname : postgres
-        schema : dbt_rkurniawati (target schema)
+   For this project, I used Supabase to host cloud PostgreSQL database. 
+   Connection details are as follows :
+   	type: postgres
+   	host : aws-0-ap-southeast-1.pooler.supabase.com
+   	user : postgres.zrszjmngrrdaxjwxlfed
+   	password : Super123
+   	port: 5432
+   	dbname : postgres
+   	schema : dbt_rkurniawati (target schema)
 
-3. dbt setup :
+4. dbt setup :
     - Download the script from the following repositories : 
         https://github.com/rinakw1412/MS/
     - On dbt cloud, Copy models & .yml files to the respective folders of dbt project
